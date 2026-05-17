@@ -47,7 +47,7 @@ def upload_world(data: WorldUploadRequest,
             status="published",
             file_path=file_path,
             max_players=data.max_players,
-            total_players=0,
+            players_count=0,
             avg_rating=0
         )
         db.add(world)
@@ -189,7 +189,7 @@ def world_stats(world_id: str, authorization: str = Header(...)):
         return {
             "world_id": world_id,
             "name": world.name,
-            "total_players": world.total_players,
+            "players_count": world.players_count,
             "avg_rating": world.avg_rating
         }
     finally:
