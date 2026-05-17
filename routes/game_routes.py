@@ -122,7 +122,7 @@ def join_game(game_id: str, authorization: str = Header(...)):
             World.id == game["world_id"]
         ).first()
         if world:
-            world.total_players = (world.total_players or 0) + 1
+            world.players_count = (world.total_players or 0) + 1
             db.commit()
     finally:
         db.close()
