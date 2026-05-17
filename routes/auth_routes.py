@@ -80,6 +80,9 @@ def register(data: dict):
 
         return {
             "message": "user created",
+            "token": token,
+            "player_id": player_id,
+            "role": role
             
         }
 
