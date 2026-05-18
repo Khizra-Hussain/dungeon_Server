@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Integer, Float, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, DateTime
+from datetime import datetime
 from db.database import Base
 import uuid
 
@@ -9,6 +10,9 @@ class World(Base):
     creator_id = Column(String, ForeignKey("players.id"))
     name = Column(String)
     version = Column(Integer, default=1)
+    width = Column(Integer, default=0)
+    height = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String)  # draft | published | archived
     file_path = Column(String)
     max_players = Column(Integer)
