@@ -71,6 +71,7 @@ def register(data: dict):
         token = jwt.encode(
             {
                 "player_id": player_id,
+                "username": username,
                 "role": role,
                 "exp": datetime.utcnow() + timedelta(hours=24)
             },
@@ -116,6 +117,7 @@ def login(data: dict):
         token = jwt.encode(
             {
                 "player_id": player.id,
+                "usernmame": player.username,
                 "role": player.role,
                 "exp": datetime.utcnow() + timedelta(hours=24)
             },
