@@ -140,7 +140,10 @@ def editor_worlds(username: str, authorization: str = Header(...)):
                 "name": w.name,
                 "version": w.version,
                 "status": w.status,
-                "max_players": w.max_players
+                "max_players": w.max_players,
+                "width": w.width,
+                "height": w.height,
+                "created_at": w.created_at
             }
             for w in worlds
         ]}
