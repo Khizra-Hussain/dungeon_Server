@@ -14,7 +14,7 @@ class LoginRequest(BaseModel):
 
 class ActionRequest(BaseModel):
     game_id: str
-    player_id: str
+    username: str
     action_type: str
     payload: dict
     timestamp: str
