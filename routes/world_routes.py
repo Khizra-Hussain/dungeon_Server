@@ -16,48 +16,64 @@ import os
 router = APIRouter(prefix="/worlds")
 
 # upload world map 
+# upload world map
 @router.post("/upload")
 def upload_world(data: WorldUploadRequest,
                  authorization: str = Header(...)):
     claims = verify_token(authorization)
     if claims["role"] != "editor":
         raise HTTPException(status_code=403, detail="Only editors can upload worlds")
+
     creator_id = claims["player_id"]
-
-    world_id = str(uuid.uuid4())
-    file_path = f"data/worlds/{world_id}.json"
-
-    # save in file
-    world_dict = data.dict()
-    world_dict["world_id"] = world_id
-    world_dict["version"] = 1
-    world_dict["created_by"] = creator_id
-    world_dict["created_at"] = datetime.utcnow().isoformat()  
-
-    os.makedirs("data/worlds", exist_ok=True)
-    with open(file_path, "w") as f:
-        json.dump(world_dict, f)
 
     db = SessionLocal()
     try:
-        world = World(
-            id=world_id,
-            creator_id=creator_id,
-            name=data.name,
-            version=1,
-            status="published",
-            file_path=file_path,
-            max_players=data.max_players,
-            players_count=0,
-            avg_rating=0
-        )
-        db.add(world)
-        db.commit()
+        existing_world = db.query(World).filter(
+            World.creator_id == creator_id,
+            World.name == data.name
+        ).first()
+
+        if existing_world:
+            new_version = existing_world.version + 1
+            world_id = existing_world.id
+            file_path = existing_world.file_path
+        else:
+            new_version = 1
+            world_id = str(uuid.uuid4())
+            file_path = f"data/worlds/{world_id}.json"
+
+        world_dict = data.dict()
+        world_dict["world_id"] = world_id
+        world_dict["version"] = new_version
+        world_dict["created_by"] = creator_id
+        world_dict["created_at"] = datetime.utcnow().isoformat()
+
+        os.makedirs("data/worlds", exist_ok=True)
+        with open(file_path, "w") as f:
+            json.dump(world_dict, f)
+
+        if existing_world:
+            existing_world.version = new_version
+            existing_world.file_path = file_path
+            db.commit()
+        else:
+            world = World(
+                id=world_id,
+                creator_id=creator_id,
+                name=data.name,
+                version=new_version,
+                status="published",
+                file_path=file_path,
+                max_players=data.max_players,
+                players_count=0,
+                avg_rating=0
+            )
+            db.add(world)
+            db.commit()
+
+        return {"message": "world uploaded", "world_id": world_id, "version": new_version}
     finally:
         db.close()
-
-    return {"message": "world uploaded", "world_id": world_id}
-
 # list of worlds
 @router.get("/")
 def list_worlds(authorization: str = Header(...)):
