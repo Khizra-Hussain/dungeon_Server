@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Header
 from fastapi.responses import FileResponse
 from db.database import SessionLocal
 from models.world import World
+from models.player import Player
 from datetime import datetime
 from models.game import GameSession
 from models.rating import WorldRating
@@ -102,19 +103,20 @@ def list_worlds(authorization: str = Header(...)):
         db.close()
 
 #editors's maps
-@router.get("/{editor_id}")
-def editor_worlds(editor_id: str, authorization: str = Header(...)):
+@router.get("/{username}")
+def editor_worlds(username: str, authorization: str = Header(...)):
     claims = verify_token(authorization)
 
-    
     if claims["role"] != "editor":
         raise HTTPException(status_code=403, detail="Only editors can view their worlds")
 
     db = SessionLocal()
     try:
-        worlds = db.query(World).filter(
-            World.creator_id == editor_id
-        ).all()
+        editor = db.query(Player).filter(Player.username == username).first()
+        if not editor:
+            raise HTTPException(status_code=404, detail="Editor not found")
+
+        worlds = db.query(World).filter(World.creator_id == editor.id).all()
 
         return {"worlds": [
             {
@@ -128,7 +130,7 @@ def editor_worlds(editor_id: str, authorization: str = Header(...)):
         ]}
     finally:
         db.close()
-
+      
 # download world
 @router.get("/{world_id}/download")
 def download_world(world_id: str):
