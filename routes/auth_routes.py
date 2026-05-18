@@ -117,7 +117,7 @@ def login(data: dict):
         token = jwt.encode(
             {
                 "player_id": player.id,
-                "usernmame": player.username,
+                "username": player.username,
                 "role": player.role,
                 "exp": datetime.utcnow() + timedelta(hours=24)
             },
