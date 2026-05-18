@@ -87,9 +87,9 @@ def join_game(game_id: str, authorization: str = Header(...)):
     if game["status"] != "waiting":
         raise HTTPException(status_code=400, detail="Game already started")
 
-    player_id = claims["player_id"]
+    username = claims["username"]
 
-    already_in = any(p["id"] == player_id for p in game["players"])
+    already_in = any(p["username"] == username for p in game["players"])
     if already_in:
         raise HTTPException(status_code=400, detail="Already in this game")
 
@@ -101,7 +101,7 @@ def join_game(game_id: str, authorization: str = Header(...)):
     # spawn point 0,0
     
     game["players"].append({
-        "id": player_id,
+        "username": username,
         "x": 0,
         "y": 0,
         "spawn_x": 0,
@@ -142,8 +142,8 @@ async def submit_action(game_id: str, action: ActionRequest,
     if game["status"] != "active":
         raise HTTPException(status_code=400, detail="Game is not active")
 
-    if claims["player_id"] != action.player_id:
-        raise HTTPException(status_code=403, detail="Token does not match player_id")
+    if claims["username"] != action.username:
+        raise HTTPException(status_code=403, detail="Token does not match username")
 
     world = active_worlds.get(game_id)
     if not world:
@@ -183,7 +183,7 @@ def get_game_state(game_id: str, authorization: str = Header(...)):
 
     # only player can see changes
     player_in_game = any(
-        p["id"] == claims["player_id"]
+        p["username"] == claims["username"]
         for p in game["players"]
     )
     if not player_in_game:
@@ -191,15 +191,15 @@ def get_game_state(game_id: str, authorization: str = Header(...)):
 
     return game
 
-@router.websocket("/ws/{game_id}/{player_id}")
-async def websocket_endpoint(websocket: WebSocket, game_id: str, player_id: str):
+@router.websocket("/ws/{game_id}/{username}")
+async def websocket_endpoint(websocket: WebSocket, game_id: str, username: str):
     
     game = active_games.get(game_id)
     if not game:
         await websocket.close()
         return
 
-    player_in_game = any(p["id"] == player_id for p in game["players"])
+    player_in_game = any(p["username"] == username for p in game["players"])
     if not player_in_game:
         await websocket.close()
         return
