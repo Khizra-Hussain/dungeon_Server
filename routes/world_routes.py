@@ -15,7 +15,6 @@ import os
 
 router = APIRouter(prefix="/worlds")
 
-# upload world map 
 # upload world map
 @router.post("/upload")
 def upload_world(data: WorldUploadRequest,
@@ -62,6 +61,8 @@ def upload_world(data: WorldUploadRequest,
                 creator_id=creator_id,
                 name=data.name,
                 version=new_version,
+                width=data.width, 
+                height=data.height,
                 status="published",
                 file_path=file_path,
                 max_players=data.max_players,
