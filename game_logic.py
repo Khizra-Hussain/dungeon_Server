@@ -12,7 +12,7 @@ def validate_action(action, game_state, world):
     # player must be in this game
     player = next(
         (p for p in game_state.get("players", [])
-         if p["id"] == action["player_id"]), None
+         if p["username"] == action["username"]), None
     )
     if not player:
         return False, "Player not found"
@@ -101,7 +101,7 @@ def apply_action(action, game_state):
 
     player = next(
         (p for p in game_state.get("players", [])
-         if p["id"] == action["player_id"]), None
+         if p["username"] == action["username"]), None
     )
     if not player:
         return game_state
@@ -134,7 +134,7 @@ def apply_action(action, game_state):
     #door open
     elif action["action_type"] == "open_door":
         game_state["status"] = "finished"
-        game_state["winner_id"] = action["player_id"]
+        game_state["winner_username"] = action["username"]
 
     elif action["action_type"] == "chat":
         message = action["payload"].get("msg")
