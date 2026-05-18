@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Header
 from db.database import SessionLocal
 from models.news import News
 from models.subscription import Subscription
-from models.player import Player  
+from models.player import Player
 from routes.auth_routes import verify_token
 from models_pydantic import NewsRequest
 from datetime import datetime
@@ -10,18 +10,15 @@ import uuid
 
 router = APIRouter(prefix="/editors")
 
-
 # get all editors list
 @router.get("/list")
 def list_editors(authorization: str = Header(...)):
     claims = verify_token(authorization)
-
     db = SessionLocal()
     try:
         editors = db.query(Player).filter(
             Player.role == "editor"
         ).all()
-
         return {"editors": [
             {
                 "id": e.id,
@@ -32,23 +29,27 @@ def list_editors(authorization: str = Header(...)):
     finally:
         db.close()
 
-#publish news
-@router.post("/{editor_id}/news")
-def publish_news(editor_id: str, data: NewsRequest,
+# publish news
+@router.post("/{username}/news")
+def publish_news(username: str, data: NewsRequest,
                  authorization: str = Header(...)):
     claims = verify_token(authorization)
-    #only editor can
+
     if claims["role"] != "editor":
         raise HTTPException(status_code=403, detail="Only editors can publish news")
-    #only editor's id
-    if claims["player_id"] != editor_id:
+
+    if claims["username"] != username:
         raise HTTPException(status_code=403, detail="You can only publish as yourself")
 
     db = SessionLocal()
     try:
+        editor = db.query(Player).filter(Player.username == username).first()
+        if not editor:
+            raise HTTPException(status_code=404, detail="Editor not found")
+
         news = News(
             id=str(uuid.uuid4()),
-            editor_id=editor_id,
+            editor_id=editor.id,
             content=data.content,
             created_at=datetime.utcnow()
         )
@@ -58,18 +59,22 @@ def publish_news(editor_id: str, data: NewsRequest,
     finally:
         db.close()
 
-
-@router.get("/{editor_id}/news")
-def get_news(editor_id: str, authorization: str = Header(...)):
+# get news
+@router.get("/{username}/news")
+def get_news(username: str, authorization: str = Header(...)):
     claims = verify_token(authorization)
 
     db = SessionLocal()
     try:
+        editor = db.query(Player).filter(Player.username == username).first()
+        if not editor:
+            raise HTTPException(status_code=404, detail="Editor not found")
+
         news_list = db.query(News).filter(
-            News.editor_id == editor_id
+            News.editor_id == editor.id
         ).order_by(News.created_at.desc()).all()
 
-        return {"editor_id": editor_id, "news": [
+        return {"editor_id": editor.id, "news": [
             {
                 "id": n.id,
                 "content": n.content,
@@ -80,32 +85,35 @@ def get_news(editor_id: str, authorization: str = Header(...)):
     finally:
         db.close()
 
-
-@router.post("/{editor_id}/subscribe")
-def subscribe(editor_id: str, authorization: str = Header(...)):
+# subscribe
+@router.post("/{username}/subscribe")
+def subscribe(username: str, authorization: str = Header(...)):
     claims = verify_token(authorization)
     player_id = claims["player_id"]
 
-    
-    if player_id == editor_id:
-        raise HTTPException(status_code=400, detail="Cannot subscribe to yourself")
-
     db = SessionLocal()
     try:
+        editor = db.query(Player).filter(Player.username == username).first()
+        if not editor:
+            raise HTTPException(status_code=404, detail="Editor not found")
+
+        if player_id == editor.id:
+            raise HTTPException(status_code=400, detail="Cannot subscribe to yourself")
+
         existing = db.query(Subscription).filter(
             Subscription.player_id == player_id,
-            Subscription.editor_id == editor_id
+            Subscription.editor_id == editor.id
         ).first()
 
         if existing:
-            return {"message": "already subscribed", "editor_id": editor_id}
+            return {"message": "already subscribed", "editor": username}
 
         sub = Subscription(
             player_id=player_id,
-            editor_id=editor_id
+            editor_id=editor.id
         )
         db.add(sub)
         db.commit()
-        return {"message": "subscribed", "editor_id": editor_id}
+        return {"message": "subscribed", "editor": username}
     finally:
         db.close()
