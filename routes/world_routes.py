@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from fastapi.responses import FileResponse
 from db.database import SessionLocal
+from sqlalchemy import func
 from models.world import World
 from models.player import Player
 from datetime import datetime
@@ -35,33 +36,55 @@ def upload_world(data: WorldUploadRequest,
         if existing_world:
             new_version = existing_world.version + 1
             world_id = existing_world.id
-            file_path = existing_world.file_path
+            file_path = f"data/worlds/{world_id}_v{new_version}.json"
+
+            world_dict = data.dict()
+            world_dict["world_id"] = world_id
+            world_dict["version"] = new_version
+            world_dict["created_by"] = creator_id
+            world_dict["created_at"] = datetime.utcnow().isoformat()
+
+            os.makedirs("data/worlds", exist_ok=True)
+            with open(file_path, "w") as f:
+                json.dump(world_dict, f)
+
+            new_world = World(
+                id=str(uuid.uuid4()),
+                creator_id=creator_id,
+                name=data.name,
+                version=new_version,
+                width=data.width,
+                height=data.height,
+                status="published",
+                file_path=file_path,
+                max_players=data.max_players,
+                players_count=0,
+                avg_rating=0
+            )
+            db.add(new_world)
+            db.commit()
+            return {"message": "world uploaded", "world_id": world_id, "version": new_version}
         else:
             new_version = 1
             world_id = str(uuid.uuid4())
             file_path = f"data/worlds/{world_id}.json"
 
-        world_dict = data.dict()
-        world_dict["world_id"] = world_id
-        world_dict["version"] = new_version
-        world_dict["created_by"] = creator_id
-        world_dict["created_at"] = datetime.utcnow().isoformat()
+            world_dict = data.dict()
+            world_dict["world_id"] = world_id
+            world_dict["version"] = new_version
+            world_dict["created_by"] = creator_id
+            world_dict["created_at"] = datetime.utcnow().isoformat()
 
-        os.makedirs("data/worlds", exist_ok=True)
-        with open(file_path, "w") as f:
-            json.dump(world_dict, f)
+            os.makedirs("data/worlds", exist_ok=True)
+            with open(file_path, "w") as f:
+                json.dump(world_dict, f)
 
-        if existing_world:
-            existing_world.version = new_version
-            existing_world.file_path = file_path
-            db.commit()
-        else:
             world = World(
                 id=world_id,
                 creator_id=creator_id,
                 name=data.name,
                 version=new_version,
-                width=data.width, 
+                width=data.width,
                 height=data.height,
                 status="published",
                 file_path=file_path,
@@ -71,8 +94,7 @@ def upload_world(data: WorldUploadRequest,
             )
             db.add(world)
             db.commit()
-
-        return {"message": "world uploaded", "world_id": world_id, "version": new_version}
+            return {"message": "world uploaded", "world_id": world_id, "version": new_version}
     finally:
         db.close()
 # list of worlds
@@ -94,10 +116,26 @@ def list_worlds(authorization: str = Header(...)):
         if not editor_ids:
             return {"worlds": []}
 
-        worlds = db.query(World).filter(
-            World.creator_id.in_(editor_ids),
+        subquery = db.query(
+            World.name,
+            World.creator_id,
+            func.max(World.version).label("max_version")
+        ).filter(
+            World.creator_id.in_(editor_ids)
+        ).group_by(
+            World.name,
+            World.creator_id
+        ).subquery()
+
+        worlds = db.query(World).join(
+            subquery,
+            (World.name == subquery.c.name)
+            & (World.creator_id == subquery.c.creator_id)
+            & (World.version == subquery.c.max_version)
+        ).filter(
             World.status == "published"
         ).all()
+
 
         result = []
         for w in worlds:
