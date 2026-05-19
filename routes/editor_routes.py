@@ -95,6 +95,8 @@ def subscribe(username: str, authorization: str = Header(...)):
     try:
         editor = db.query(Player).filter(Player.username == username).first()
         if not editor:
+            editor = db.query(Player).filter(Player.id == username).first()
+        if not editor:
             raise HTTPException(status_code=404, detail="Editor not found")
 
         if player_id == editor.id:
