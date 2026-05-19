@@ -63,7 +63,7 @@ def upload_world(data: WorldUploadRequest,
             )
             db.add(new_world)
             db.commit()
-            return {"message": "world uploaded", "world_id": world_id, "version": new_version}
+            return {"message": "world uploaded", "world_id": new_world.id, "version": new_version}
         else:
             new_version = 1
             world_id = str(uuid.uuid4())
