@@ -194,13 +194,17 @@ def get_game_state(game_id: str, authorization: str = Header(...)):
 
 @router.websocket("/ws/{game_id}/{username}")
 async def websocket_endpoint(websocket: WebSocket, game_id: str, username: str):
-    
+
     game = active_games.get(game_id)
     if not game:
         await websocket.close()
         return
 
-    player_in_game = any(p["username"] == username for p in game["players"])
+    player_in_game = any(
+        p["username"] == username
+        for p in game["players"]
+    )
+
     if not player_in_game:
         await websocket.close()
         return
@@ -210,26 +214,27 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str, username: str):
     try:
         while True:
             await websocket.receive_text()
-except WebSocketDisconnect:
 
-    ws_manager.disconnect(game_id, websocket)
+    except WebSocketDisconnect:
 
-    game = active_games.get(game_id)
+        ws_manager.disconnect(game_id, websocket)
 
-    if game:
+        game = active_games.get(game_id)
 
-        # remove disconnected player
-        game["players"] = [
-            p for p in game["players"]
-            if p["username"] != username
-        ]
+        if game:
 
-        print("Remaining players:", len(game["players"]))
+            # remove disconnected player
+            game["players"] = [
+                p for p in game["players"]
+                if p["username"] != username
+            ]
 
-        # remove active session if empty
-        if len(game["players"]) == 0:
+            print("Remaining players:", len(game["players"]))
 
-            print("Removing active session:", game_id)
+            # remove active session if empty
+            if len(game["players"]) == 0:
 
-            active_games.pop(game_id, None)
-            active_worlds.pop(game_id, None)
+                print("Removing active session:", game_id)
+
+                active_games.pop(game_id, None)
+                active_worlds.pop(game_id, None)
