@@ -226,10 +226,10 @@ except WebSocketDisconnect:
 
         print("Remaining players:", len(game["players"]))
 
-        # delete game if empty
+        # remove active session if empty
         if len(game["players"]) == 0:
 
-            print("Deleting game:", game_id)
+            print("Removing active session:", game_id)
 
             active_games.pop(game_id, None)
             active_worlds.pop(game_id, None)
