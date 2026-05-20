@@ -205,7 +205,6 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str, username: str):
         return
 
     player_in_game = any(p["username"] == username for p in game["players"])
-    for p in game["players"])
     if not player_in_game:
         await websocket.close()
         return
