@@ -92,7 +92,7 @@ def join_game(game_id: str, authorization: str = Header(...)):
     # check max players
     world_data = active_worlds.get(game_id, {})
     # max players ke baad kisi ko allow mat karo
-    if len(game["players"]) >= world_data.get("max_players", 4):
+    if len(game["players"]) >= world_data.get("max_players", 2):
         raise HTTPException(status_code=400, detail="Game is full")
 
 
