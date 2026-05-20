@@ -83,10 +83,6 @@ def join_game(game_id: str, authorization: str = Header(...)):
     game = active_games.get(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
-
-    if game["status"] != "waiting":
-        raise HTTPException(status_code=400, detail="Game already started")
-
     username = claims["username"]
 
     already_in = any(p["username"] == username for p in game["players"])
@@ -95,9 +91,6 @@ def join_game(game_id: str, authorization: str = Header(...)):
 
     # check max players
     world_data = active_worlds.get(game_id, {})
-    if len(game["players"]) >= 2:
-        game["status"] = "active"
-
     # max players ke baad kisi ko allow mat karo
     if len(game["players"]) >= world_data.get("max_players", 4):
         raise HTTPException(status_code=400, detail="Game is full")
