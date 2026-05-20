@@ -210,7 +210,26 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str, username: str):
     try:
         while True:
             await websocket.receive_text()
+except WebSocketDisconnect:
 
-    except WebSocketDisconnect:
-        ws_manager.disconnect(game_id, websocket)
-        
+    ws_manager.disconnect(game_id, websocket)
+
+    game = active_games.get(game_id)
+
+    if game:
+
+        # remove disconnected player
+        game["players"] = [
+            p for p in game["players"]
+            if p["username"] != username
+        ]
+
+        print("Remaining players:", len(game["players"]))
+
+        # delete game if empty
+        if len(game["players"]) == 0:
+
+            print("Deleting game:", game_id)
+
+            active_games.pop(game_id, None)
+            active_worlds.pop(game_id, None)
