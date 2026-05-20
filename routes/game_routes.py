@@ -216,31 +216,30 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str, username: str):
             await websocket.receive_text()
 
     except WebSocketDisconnect:
-    ws_manager.disconnect(game_id, websocket)
-    game = active_games.get(game_id)
+        ws_manager.disconnect(game_id, websocket)
 
-    if game:
-        game["players"] = [
-            p for p in game["players"]
-            if p["username"] != username
-        ]
+        game = active_games.get(game_id)
 
-        print("Remaining players:", len(game["players"]))
+        if game:
+            game["players"] = [
+                p for p in game["players"]
+                if p["username"] != username
+            ]
 
-        if len(game["players"]) == 0:
-            print("Removing active session:", game_id)
-            active_games.pop(game_id, None)
-            active_worlds.pop(game_id, None)
+            print("Remaining players:", len(game["players"]))
 
-            # ← yeh andar hona chahiye if block mein
-            db = SessionLocal()
-            try:
-                session = db.query(GameSession).filter(
-                    GameSession.id == game_id
-                ).first()
-                if session:
-                    session.status = "finished"
-                    db.commit()
-            finally:
-                db.close()
+            if len(game["players"]) == 0:
+                print("Removing active session:", game_id)
+                active_games.pop(game_id, None)
+                active_worlds.pop(game_id, None)
 
+                db = SessionLocal()
+                try:
+                    session = db.query(GameSession).filter(
+                        GameSession.id == game_id
+                    ).first()
+                    if session:
+                        session.status = "finished"
+                        db.commit()
+                finally:
+                    db.close()
