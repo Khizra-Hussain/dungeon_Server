@@ -158,6 +158,9 @@ async def submit_action(game_id: str, action: ActionRequest,
 
     valid, reason = validate_action(action_dict, game, world)
     if not valid:
+        print("VALIDATION FAILED:", reason)
+        print("ACTION:", action_dict)
+        print("PLAYER:", player if 'player' in locals() else "unknown")
         raise HTTPException(status_code=400, detail=reason)
 
     updated = apply_action(action_dict, game)
