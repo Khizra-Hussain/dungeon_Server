@@ -162,9 +162,6 @@ def list_worlds(authorization: str = Header(...)):
 def editor_worlds(username: str, authorization: str = Header(...)):
     claims = verify_token(authorization)
 
-    if claims["role"] != "editor":
-        raise HTTPException(status_code=403, detail="Only editors can view their worlds")
-
     db = SessionLocal()
     try:
         editor = db.query(Player).filter(Player.username == username).first()
