@@ -84,7 +84,7 @@ def join_game(game_id: str, authorization: str = Header(...)):
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
     username = claims["username"]
-
+    print("CURRENT PLAYERS:", game["players"])
     already_in = any(p["username"] == username for p in game["players"])
     if already_in:
         raise HTTPException(status_code=400, detail="Already in this game")
