@@ -110,7 +110,7 @@ def join_game(game_id: str, authorization: str = Header(...)):
         "has_key": False
     })
 
-    if len(game["players"]) == world_data.get("max_players", 4):
+    if len(game["players"]) >= 2:
         game["status"] = "active"
 
     # play_count +1
