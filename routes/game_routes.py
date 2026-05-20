@@ -95,8 +95,13 @@ def join_game(game_id: str, authorization: str = Header(...)):
 
     # check max players
     world_data = active_worlds.get(game_id, {})
+    if len(game["players"]) >= 2:
+        game["status"] = "active"
+
+    # max players ke baad kisi ko allow mat karo
     if len(game["players"]) >= world_data.get("max_players", 4):
         raise HTTPException(status_code=400, detail="Game is full")
+
 
     # spawn point 0,0
     
@@ -199,7 +204,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str, username: str):
         await websocket.close()
         return
 
-    player_in_game = any(p["username"] == username or p["id"] == username
+    player_in_game = any(p["username"] == username for p in game["players"])
     for p in game["players"])
     if not player_in_game:
         await websocket.close()
