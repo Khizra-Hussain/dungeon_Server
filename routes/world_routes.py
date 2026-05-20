@@ -225,8 +225,13 @@ def delete_world(world_id: str, authorization: str = Header(...)):
             GameSession.status.in_(["waiting", "active"])
         ).first()
 
+        if active and active.id not in active_games:
+            active.status = "finished"
+            db.commit()
+            active = None
+
         if active:
-            raise HTTPException(status_code=400, detail="Cannot delete world with active sessions")
+          raise HTTPException(status_code=400, detail="Cannot delete world with active sessions")
 
         db.delete(world)
         db.commit()
