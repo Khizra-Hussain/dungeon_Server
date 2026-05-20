@@ -33,9 +33,11 @@ def validate_action(action, game_state, world):
             if x == player.get("spawn_x", 0) and y == player.get("spawn_y", 0):
                 return False, "Cannot return to spawn point"
         # checking boundries
-        if y < 0 or y >= len(world["tiles"]):
+        world_width = world["width"]
+        world_height = world["height"]
+        if y < 0 or y >= world_height:
             return False, "Out of bounds"
-        if x < 0 or x >= len(world["tiles"][y]):
+        if x < 0 or x >= world_width:
             return False, "Out of bounds"
 
         tile = next(
