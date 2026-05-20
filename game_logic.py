@@ -52,7 +52,7 @@ def validate_action(action, game_state, world):
         obstacle = next(
             (e for e in game_state.get("entities", [])
             if e.get("x") == x and e.get("y") == y
-            and e.get("type") in ["wall", "tree", "statue"]), None
+            and e.get("type") in ["fence", "tree", "statue"]), None
         )
         if obstacle:
             return False, f"Cannot move into {obstacle.get('type')}"
@@ -117,6 +117,16 @@ def apply_action(action, game_state):
         if direction == "west":  player["x"] -= 1
         player["has_moved"] = True
 
+        trap = next(
+        (e for e in game_state.get("entities", [])
+        if e.get("x") == player["x"] and e.get("y") == player["y"]
+        and e.get("type") == "trap"), None
+        )
+        if trap:
+            player["hp"] = player.get("hp", 10) - 2
+            if player["hp"] <= 0:
+                game_state["players"].remove(player)
+
     
     #pickup
     elif action["action_type"] == "pickup":
@@ -126,7 +136,7 @@ def apply_action(action, game_state):
              if e.get("id") == target_id), None
         )
         if entity:
-            if entity["type"] == "treat":
+            if entity["type"] == "consumable":
                 player["hp"] = player.get("hp", 0) + 1
                 player["score"] = player.get("score", 0) + 5
             elif entity["type"] == "key":
